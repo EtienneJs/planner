@@ -1,5 +1,35 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Docker + Base de datos
+
+### Iniciar PostgreSQL con Docker
+
+```bash
+# Levantar solo la base de datos
+npm run db:up
+
+# Configurar .env (copia .env.example si no existe)
+# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/planner"
+
+# Ejecutar migraciones
+npx prisma migrate dev
+```
+
+### Comandos Docker útiles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run db:up` | Inicia PostgreSQL en Docker |
+| `npm run db:down` | Detiene los contenedores |
+| `npm run db:reset` | Elimina volúmenes y reinicia la DB |
+
+### Ejecutar la app en Docker (producción)
+
+```bash
+# Descomenta el servicio "app" en docker-compose.yml
+docker compose up -d
+```
+
 ## Getting Started
 
 First, run the development server:
