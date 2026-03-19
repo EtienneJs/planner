@@ -14,6 +14,8 @@ export async function POST(req: Request) {
       startTime: new Date(body.startTime),
       endTime: new Date(body.endTime),
       userId: body.userId,
+      description: body.description,
+      value: body.value
     },
   });
 

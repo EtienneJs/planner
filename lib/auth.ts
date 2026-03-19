@@ -3,6 +3,8 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { getToken } from "next-auth/jwt";
+import { NextRequest } from "next/server";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -40,3 +42,25 @@ export const authOptions: NextAuthOptions = {
   },
   pages: { signIn: "/login" },
 };
+export async function getAuthUser(req: NextRequest) {
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token?.sub) return null;
+
+  return {
+    id: token.sub,
+    email: token.email as string | undefined,
+  };
+}
+
+// Para rutas que requieren auth obligatorio
+export async function requireAuth(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) {
+    throw new Error("UNAUTHORIZED");
+  }
+  return user;
+}

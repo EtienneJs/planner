@@ -15,35 +15,40 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
 
-   const token = await getToken({ 
-        req,
-        secret: process.env.NEXTAUTH_SECRET
-    });
-    console.log({ 
-        req,
-        secret: process.env.NEXTAUTH_SECRET,
-        token
-    })
-
-    if (!token) {
-        return api.unauthorized("Debes iniciar sesión");
-    }
-
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const userId = token?.sub; 
+  if (!userId) return api.unauthorized("Sesión inválida");
   try {
     const body = await req.json();
     const data = createPurchaseSchema.parse(body);
 
+    const productIds = data.detailProducts.map((d) => d.productId);
+    const products = await db.product.findMany({
+      where: { id: { in: productIds } },
+    });
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    if (products.length !== productIds.length) {
+      return api.badRequest("Algunos productos no existen");
+    }
+
+    const detailProductsWithTotal = data.detailProducts.map((d) => {
+      const product = productMap.get(d.productId)!;
+      return {
+        productId: d.productId,
+        cantidad: d.cantidad,
+        total: product.price * d.cantidad,
+      };
+    });
+
     const purchase = await db.purchase.create({
       data: {
         description: data.description,
-        price: data.price,
-        userId: token.id as string,  // ← desde la sesión, no del body
+        total: detailProductsWithTotal.reduce((acc, totalprod) => acc + totalprod.total,0),
+        userId,
         detailProducts: {
-          create: data.detailProducts.map((d) => ({
-            productId: d.productId,
-            cantidad: d.cantidad,
-            total: d.total,
-          })),
+          create: detailProductsWithTotal,
         },
       },
     });

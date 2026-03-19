@@ -23,6 +23,8 @@ model User {
 model Event {
   id        String   @id @default(cuid())
   title     String
+  description String
+  value     Int
   startTime DateTime
   endTime   DateTime
   userId    String
@@ -32,7 +34,7 @@ model Event {
 model Purchase {
   id     String   @id @default(cuid())
   description   String
-  price  Int
+  total  Int
   date   DateTime @default(now())
   userId String
   user   User     @relation(fields: [userId], references: [id])
@@ -57,6 +59,7 @@ model Product {
   id     String   @id @default(cuid())
   name   String 
   price  Int
+  value  Int
   purchaseDetails PurchaseDetailProduct[]
 }
 
