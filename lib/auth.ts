@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { getToken } from "next-auth/jwt";
 import { NextRequest } from "next/server";
+import { api } from "@/lib/api/response";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -48,19 +49,26 @@ export async function getAuthUser(req: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  if (!token?.sub) return null;
+  if (!token?.id) return {error:"INVALID_SESION"};
+
+  const userExists = await db.user.findUnique({ where: { id: token.id } });
+  if (!userExists) return{error:"USER_NO_EXIST"}
 
   return {
-    id: token.sub,
+    id: token.id,
     email: token.email as string | undefined,
   };
 }
 
-// Para rutas que requieren auth obligatorio
-export async function requireAuth(req: NextRequest) {
+/** Retorna el usuario autenticado o la Response 401. Uso: const user = await requireAuth(req); if (user instanceof Response) return user; */
+export async function requireAuth(
+  req: NextRequest
+): Promise<{ id: string; email?: string } | Response> {
   const user = await getAuthUser(req);
-  if (!user) {
-    throw new Error("UNAUTHORIZED");
+  if (!user || "error" in user) {
+    return api.unauthorized(
+      (user && "error" in user ? user.error : "Sesión inválida") as string
+    );
   }
   return user;
 }

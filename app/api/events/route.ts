@@ -1,23 +1,41 @@
+import { requireAuth } from "@/lib/auth";
+import { api } from "@/lib/api/response";
 import { db } from "@/lib/db";
+import { createEventSchema } from "@/lib/validations/events";
+import z from "zod";
+import { NextRequest } from "next/server";
 
-export async function GET() {
-  const events = await db.event.findMany();
-  return Response.json(events);
+export async function GET(req: NextRequest) {
+  const user = await requireAuth(req);
+  if (user instanceof Response) return user;
+  const events = await db.event.findMany({ where: { userId: user.id } });
+  return api.ok("OK", events);
 }
 
-export async function POST(req: Request) {
-  const body = await req.json();
+export async function POST(req: NextRequest) {
+  const user = await requireAuth(req);
+  if (user instanceof Response) return user;
 
-  const event = await db.event.create({
-    data: {
-      title: body.title,
-      startTime: new Date(body.startTime),
-      endTime: new Date(body.endTime),
-      userId: body.userId,
-      description: body.description,
-      value: body.value
-    },
-  });
+  try {
+    const body = await req.json();
+    const data = createEventSchema.parse(body);
 
-  return Response.json(event);
+    const event = await db.event.create({
+      data: {
+        title: data.title,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        userId: user.id,
+        description: data.description,
+        value: data.value,
+      },
+    });
+
+    return api.created("Creado correctamente", event);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return api.badRequest("Datos inválidos", error.issues);
+    }
+    throw error;
+  }
 }

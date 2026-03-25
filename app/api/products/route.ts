@@ -1,21 +1,23 @@
 import { api } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import z from "zod";
-import { getToken } from "next-auth/jwt";
 import { NextRequest } from "next/server";
 import { createProductSchema } from "@/lib/validations/products";
+import { requireAuth } from "@/lib/auth";
 
-export async function GET() {
-  const purchases = await db.product.findMany();
-  return api.ok("OK", purchases);
+export async function GET(req: NextRequest) {
+  const user = await requireAuth(req);
+  if (user instanceof Response) return user;
+  const products = await db.product.findMany({ where: { userId: user.id } });
+  return api.ok("OK", products);
 }
 
 
 export async function POST(req: NextRequest) {
 
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const userId = token?.sub; 
-  if (!userId) return api.unauthorized("Sesión inválida");
+  const user = await requireAuth(req);
+  if (user instanceof Response) return user;
+
   try {
     const body = await req.json();
     const data = createProductSchema.parse(body);
@@ -24,10 +26,10 @@ export async function POST(req: NextRequest) {
       data: {
         name: data.name,
         price: data.price,
-        value: data.value
+        value: data.value,
+        userId: user.id
       },
     });
-
     return api.created("Creado correctamente", purchase);
   } catch (error) {
     if (error instanceof z.ZodError) {

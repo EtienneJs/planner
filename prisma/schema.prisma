@@ -16,6 +16,7 @@ model User {
   id       String   @id @default(cuid())
   email    String   @unique
   password String
+  products  Product[]
   events   Event[]
   purchases Purchase[]
 }
@@ -60,6 +61,8 @@ model Product {
   name   String 
   price  Int
   value  Int
+  userId String
   purchaseDetails PurchaseDetailProduct[]
+  user   User     @relation(fields: [userId], references: [id])
 }
 
