@@ -2,11 +2,7 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { api } from "@/lib/api/response";
-
-const registerSchema = z.object({
-  email: z.email(),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
-});
+import { registerSchema } from "@/lib/validations/auth";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +11,7 @@ export async function POST(req: Request) {
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
-        return api.badRequest("El email ya está registrado");
+        return api.badRequest("Email already registered");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -24,10 +20,10 @@ export async function POST(req: Request) {
       data: { email, password: hashedPassword },
     });
 
-    return api.created("Usuario registrado", { id: user.id, email: user.email })
+    return api.created("User registered", { id: user.id, email: user.email })
   } catch (error) {
     if (error instanceof z.ZodError) {
-        return api.badRequest("Datos inválidos", error.issues);
+        return api.badRequest("Invalid data", error.issues);
     }
     throw error;
   }

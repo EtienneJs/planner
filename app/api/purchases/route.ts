@@ -23,13 +23,12 @@ export async function POST(req: NextRequest) {
 
     const productIds = data.detailProducts.map((d) => d.productId);
     const products = await db.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, userId:user.id },
     });
-
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     if (products.length !== productIds.length) {
-      return api.badRequest("Algunos productos no existen");
+      return api.badRequest("Some products do not exist");
     }
 
     const detailProductsWithTotal = data.detailProducts.map((d) => {
@@ -53,10 +52,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return api.created("Creado correctamente", purchase);
+    return api.created("Created successfully", purchase);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return api.badRequest("Datos inválidos", error.issues);
+      return api.badRequest("Invalid data", error.issues);
     }
     throw error;
   }

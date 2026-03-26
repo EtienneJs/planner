@@ -2,7 +2,6 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { requireAuth } from "./lib/auth";
 
 export async function proxy(req: NextRequest) {
   const token = await getToken({
@@ -18,7 +17,7 @@ export async function proxy(req: NextRequest) {
 
   if (isApiRoute && !token) {
     return NextResponse.json(
-      { error: "No autorizado" },
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }

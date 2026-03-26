@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return api.created("Creado correctamente", event);
+    return api.created("Created successfully", event);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return api.badRequest("Datos inválidos", error.issues);
+      return api.badRequest("Invalid data", error.issues);
     }
     throw error;
   }

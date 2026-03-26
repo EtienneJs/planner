@@ -19,14 +19,13 @@ Lista orientativa según el estado actual de `app/api` y el esquema Prisma. Marc
 
 ## Compras (`/api/purchases`)
 
-- [ ] En `POST`, verificar que cada `productId` pertenece al `userId` de la sesión (no solo que el producto exista).
-- [ ] En `GET`, incluir `detailProducts` (y opcionalmente datos del producto) con `include` de Prisma para que el front no tenga que pedir compras “vacías”.
-- [ ] (Opcional) `GET/PATCH/DELETE /api/purchases/[id]` con las mismas reglas de propiedad.
+- [x] En `GET`, incluir `detailProducts` (y opcionalmente datos del producto) con `include` de Prisma para que el front no tenga que pedir compras “vacías”.
+- [x] (Opcional) `GET/PATCH/DELETE /api/purchases/[id]` con las mismas reglas de propiedad.
 
 ## Calidad y consistencia
 
-- [ ] Revisar tipos de `register`: `z.email()` puede no ser la API correcta de Zod 4; alinear con el resto de validaciones.
-- [ ] Añadir manejo explícito cuando `update`/`delete` de producto no encuentra fila o no es del usuario (404 vs 403).
+- [x] Revisar tipos de `register`: en Zod 4 `z.email()` es la API correcta (`z.string().email()` está deprecado); esquema en `lib/validations/auth.ts` alineado con el resto.
+- [x] Añadir manejo explícito cuando `update`/`delete` de producto no encuentra fila o no es del usuario (404 vs 403).
 
 ---
 

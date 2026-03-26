@@ -19,7 +19,7 @@ export async function GET(
   });
 
   if (!event) {
-    return api.notFound("Evento no encontrado");
+    return api.notFound("Event not found");
   }
 
   return api.ok("OK", event);
@@ -39,7 +39,7 @@ export async function PATCH(
   });
 
   if (!existing) {
-    return api.notFound("Evento no encontrado");
+    return api.notFound("Event not found");
   }
 
   try {
@@ -50,10 +50,10 @@ export async function PATCH(
     const endTime = data.endTime ?? existing.endTime;
 
     if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) {
-      return api.badRequest("Fechas inválidas");
+      return api.badRequest("Invalid dates");
     }
     if (endTime <= startTime) {
-      return api.badRequest("La fecha de fin debe ser posterior a la de inicio");
+      return api.badRequest("End date must be after start date");
     }
 
     const event = await db.event.update({
@@ -67,10 +67,10 @@ export async function PATCH(
       },
     });
 
-    return api.ok("Actualizado", event);
+    return api.ok("Updated", event);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return api.badRequest("Datos inválidos", error.issues);
+      return api.badRequest("Invalid data", error.issues);
     }
     throw error;
   }
@@ -90,8 +90,8 @@ export async function DELETE(
   });
 
   if (deleted.count === 0) {
-    return api.notFound("Evento no encontrado");
+    return api.notFound("Event not found");
   }
 
-  return api.ok("Evento eliminado");
+  return api.ok("Event deleted");
 }

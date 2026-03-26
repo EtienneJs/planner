@@ -49,10 +49,10 @@ export async function getAuthUser(req: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  if (!token?.id) return {error:"INVALID_SESION"};
+  if (!token?.id) return { error: "Invalid session" };
 
   const userExists = await db.user.findUnique({ where: { id: token.id } });
-  if (!userExists) return{error:"USER_NO_EXIST"}
+  if (!userExists) return { error: "User not found" };
 
   return {
     id: token.id,
@@ -67,7 +67,7 @@ export async function requireAuth(
   const user = await getAuthUser(req);
   if (!user || "error" in user) {
     return api.unauthorized(
-      (user && "error" in user ? user.error : "Sesión inválida") as string
+      (user && "error" in user ? user.error : "Invalid session") as string
     );
   }
   return user;

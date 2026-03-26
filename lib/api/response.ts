@@ -26,10 +26,12 @@ type ResponseOptions = {
       responseApi({ message, status: 201, data }),
     badRequest: (message: string, details?: unknown) =>
       responseApi({ message, status: 400, details }),
-    unauthorized: (message = "No autorizado") =>
+    unauthorized: (message = "Unauthorized") =>
       responseApi({ message, status: 401 }),
-    notFound: (message = "No encontrado") =>
+    notFound: (message = "Not found") =>
       responseApi({ message, status: 404 }),
-    serverError: (message = "Error interno") =>
+    forbidden: (message = "Forbidden") =>
+      responseApi({ message, status: 403 }),
+    serverError: (message = "Internal server error") =>
       responseApi({ message, status: 500 }),
   };
