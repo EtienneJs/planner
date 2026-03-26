@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
-import type { DateSelectArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type {
+  DateSelectArg,
+  EventClickArg,
+  EventContentArg,
+  EventInput,
+} from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import multiMonthPlugin from "@fullcalendar/multimonth";
@@ -69,6 +74,16 @@ function mapToFcEvents(rows: CalendarEvent[]): EventInput[] {
   }));
 }
 
+/** Tiempo restante hasta el fin: "2 h 3 m 10 s" (o "0 h 0 m 0 s" si ya terminó). */
+function formatRemainingUntilEnd(remainingMs: number): string {
+  if (remainingMs <= 0) return "0 h 0 m 0 s";
+  const totalSec = Math.floor(remainingMs / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${h} h ${m} m ${s} s`;
+}
+
 export function EventsCalendar() {
   const { t, locale } = useTranslation();
   const [fcEvents, setFcEvents] = useState<EventInput[]>([]);
@@ -87,6 +102,37 @@ export function EventsCalendar() {
 
   const [deleteTarget, setDeleteTarget] = useState<CalendarEvent | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const renderEventContent = useCallback(
+    (arg: EventContentArg) => {
+      const title = arg.event.title ?? "";
+      const end = arg.event.end;
+      if (!end) {
+        return (
+          <div className="fc-custom-event flex min-w-0 items-center gap-1 overflow-hidden">
+            <span className="fc-event-title truncate">{title}</span>
+          </div>
+        );
+      }
+      const countdown = formatRemainingUntilEnd(end.getTime() - nowTick);
+      return (
+        <div className="fc-custom-event flex min-w-0 items-baseline gap-1.5 overflow-hidden px-0.5 py-px sm:gap-2">
+          <span className="fc-event-title min-w-0 flex-1 truncate">{title}</span>
+          <span className="shrink-0 whitespace-nowrap font-mono text-[0.65rem] leading-tight opacity-90 tabular-nums sm:text-xs">
+            {countdown}
+          </span>
+        </div>
+      );
+    },
+    [nowTick]
+  );
 
   const load = useCallback(async () => {
     setError(null);
@@ -296,6 +342,8 @@ export function EventsCalendar() {
             dayMaxEvents
             weekends
             events={fcEvents}
+            displayEventTime={false}
+            eventContent={renderEventContent}
             select={openCreateFromSelect}
             eventClick={handleEventClick}
             slotMinTime="06:00:00"
