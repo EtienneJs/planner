@@ -16,7 +16,8 @@ import listPlugin from "@fullcalendar/list";
 import allLocales from "@fullcalendar/core/locales-all";
 
 import type { CalendarEvent, EventStatus } from "@/lib/types/event";
-import { useTranslation } from "@/components/language-provider";
+import { startOfLocalDay } from "@/lib/date";
+import { useLanguage } from "@/components/language-provider";
 import { EventStatusPicker } from "@/components/dashboard/events/event-status-picker";
 import { Button } from "@/components/ui/button";
 import {
@@ -108,7 +109,7 @@ function formatRemainingUntilEnd(remainingMs: number): string {
 }
 
 export function EventsCalendar() {
-  const { t, locale } = useTranslation();
+  const { t, locale } = useLanguage();
   const [fcEvents, setFcEvents] = useState<EventInput[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -194,6 +195,11 @@ export function EventsCalendar() {
   );
 
   function openCreateFromSelect(arg: DateSelectArg) {
+    const todayStart = startOfLocalDay();
+    if (arg.start < todayStart) {
+      arg.view.calendar.unselect();
+      return;
+    }
     setEditing(null);
     setTitle("");
     setDescription("");
@@ -204,6 +210,10 @@ export function EventsCalendar() {
     setDialogOpen(true);
     arg.view.calendar.unselect();
   }
+
+  const selectAllow = useCallback((selectInfo: { start: Date }) => {
+    return selectInfo.start >= startOfLocalDay();
+  }, []);
 
   function openEditFromEvent(ev: CalendarEvent) {
     setEditing(ev);
@@ -258,6 +268,15 @@ export function EventsCalendar() {
     if (end <= start) {
       setFormError(t("events.errEndAfterStart"));
       return;
+    }
+    if (start < startOfLocalDay()) {
+      const startUnchanged =
+        editing !== null &&
+        startStr === toDatetimeLocalValue(new Date(editing.startTime));
+      if (!startUnchanged) {
+        setFormError(t("events.errStartNotPast"));
+        return;
+      }
     }
 
     setSaving(true);
@@ -363,6 +382,7 @@ export function EventsCalendar() {
             displayEventTime={false}
             eventContent={renderEventContent}
             select={openCreateFromSelect}
+            selectAllow={selectAllow}
             eventClick={handleEventClick}
             slotMinTime="06:00:00"
             slotMaxTime="22:00:00"
@@ -417,6 +437,7 @@ export function EventsCalendar() {
                 id="ev-start"
                 type="datetime-local"
                 value={startStr}
+                min={editing ? undefined : toDatetimeLocalValue(startOfLocalDay())}
                 onChange={(e) => setStartStr(e.target.value)}
               />
             </div>
@@ -426,6 +447,7 @@ export function EventsCalendar() {
                 id="ev-end"
                 type="datetime-local"
                 value={endStr}
+                min={editing ? undefined : toDatetimeLocalValue(startOfLocalDay())}
                 onChange={(e) => setEndStr(e.target.value)}
               />
             </div>

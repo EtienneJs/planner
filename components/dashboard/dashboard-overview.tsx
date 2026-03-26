@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 
 type Props = {
   email: string | null | undefined;
@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function DashboardOverview({ email, userId }: Props) {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const display = email ?? userId ?? "";
 
   return (

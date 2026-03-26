@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 import type { Purchase } from "@/lib/types/purchase";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -35,7 +35,7 @@ async function parseJson(res: Response): Promise<unknown> {
 const periods: ChartPeriod[] = ["day", "week", "month", "year"];
 
 export function PurchasesCharts() {
-  const { t, locale } = useTranslation();
+  const { t, locale } = useLanguage();
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);

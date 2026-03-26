@@ -3,7 +3,7 @@
 import { ChevronDown } from "lucide-react";
 
 import type { EventStatus } from "@/lib/types/event";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ export function EventStatusPicker({
   onChange,
   disabled,
 }: EventStatusPickerProps) {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   function labelFor(s: EventStatus): string {
     switch (s) {

@@ -2,7 +2,7 @@
 
 import { Languages } from "lucide-react";
 
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function LanguageToggle() {
-  const { locale, setLocale, t } = useTranslation();
+  const { locale, setLocale, t } = useLanguage();
 
   return (
     <DropdownMenu>

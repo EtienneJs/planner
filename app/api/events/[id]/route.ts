@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/auth";
 import { api } from "@/lib/api/response";
+import { startOfUtcDay } from "@/lib/date";
 import { db } from "@/lib/db";
 import { updateEventSchema } from "@/lib/validations/events";
 import z from "zod";
@@ -54,6 +55,13 @@ export async function PATCH(
     }
     if (endTime <= startTime) {
       return api.badRequest("End date must be after start date");
+    }
+    if (data.startTime !== undefined) {
+      const startChanged =
+        data.startTime.getTime() !== existing.startTime.getTime();
+      if (startChanged && data.startTime < startOfUtcDay()) {
+        return api.badRequest("Start date cannot be before today");
+      }
     }
 
     const event = await db.event.update({

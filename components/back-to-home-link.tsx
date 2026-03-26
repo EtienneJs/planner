@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 
 type Props = { messageKey: "login.backHome" | "register.backHome" };
 
 export function BackToHomeLink({ messageKey }: Props) {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   return (
     <p className="text-center text-sm text-muted-foreground">
       <Link

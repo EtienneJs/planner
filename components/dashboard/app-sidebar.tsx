@@ -11,6 +11,7 @@ import {
   LogOut,
   Package,
   ShoppingCart,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -30,7 +31,7 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import type { MessageKey } from "@/lib/i18n/messages";
 
 const nav: {
@@ -44,7 +45,7 @@ const nav: {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   return (
     <Sidebar collapsible="icon" variant="inset">
@@ -115,6 +116,18 @@ export function AppSidebar() {
                     >
                       <BarChart2 />
                       <span>{t("nav.purchasesCharts")}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      render={<Link href="/dashboard/purchases/insights" />}
+                      isActive={pathname.startsWith(
+                        "/dashboard/purchases/insights"
+                      )}
+                      size="sm"
+                    >
+                      <Sparkles />
+                      <span>{t("nav.purchasesInsights")}</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>

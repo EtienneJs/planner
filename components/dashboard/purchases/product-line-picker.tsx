@@ -5,7 +5,7 @@ import { ChevronDown, Search } from "lucide-react";
 
 import type { Product } from "@/lib/types/product";
 import { Input } from "@/components/ui/input";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { cn } from "@/lib/utils";
 
 type ProductLinePickerProps = {
@@ -23,7 +23,7 @@ export function ProductLinePicker({
   excludeProductIds,
   disabled,
 }: ProductLinePickerProps) {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);

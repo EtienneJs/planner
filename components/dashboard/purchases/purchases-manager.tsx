@@ -36,7 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { ProductLinePicker } from "@/components/dashboard/purchases/product-line-picker";
 
 type ApiEnvelope<T> = { message: string; data?: T; details?: unknown };
@@ -76,7 +76,7 @@ function linesSummary(p: Purchase) {
 }
 
 export function PurchasesManager() {
-  const { t, locale } = useTranslation();
+  const { t, locale } = useLanguage();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

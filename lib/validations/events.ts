@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { startOfUtcDay } from "@/lib/date";
+
 export const eventStatusValues = ["PENDING", "NOT_COMPLETED", "COMPLETED"] as const;
 
 export const createEventSchema = z
@@ -21,6 +23,10 @@ export const createEventSchema = z
   .refine((data) => data.endTime > data.startTime, {
     message: "End date must be after start date",
     path: ["endTime"],
+  })
+  .refine((data) => data.startTime >= startOfUtcDay(), {
+    message: "Start date cannot be before today",
+    path: ["startTime"],
   });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;

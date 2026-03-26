@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function HomeAuthLinks() {
   const { status } = useSession();
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   if (status === "authenticated") {
     return (

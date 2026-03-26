@@ -1,9 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
-import type { Product } from "@/lib/types/product";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,158 +32,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTranslation } from "@/components/language-provider";
-
-type ApiEnvelope<T> = { message: string; data?: T; details?: unknown };
-
-async function parseJson(res: Response): Promise<unknown> {
-  const text = await res.text();
-  if (!text) return {};
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return {};
-  }
-}
+import { useProductsManager } from "@/hooks/use-products-manager";
 
 export function ProductsManager() {
-  const { t } = useTranslation();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-  const [value, setValue] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const load = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/products");
-      const json = (await parseJson(res)) as ApiEnvelope<Product[]>;
-      if (!res.ok) {
-        setError((json as ApiEnvelope<unknown>).message ?? t("products.loadFailed"));
-        setProducts([]);
-        return;
-      }
-      setProducts(Array.isArray(json.data) ? json.data : []);
-    } catch {
-      setError(t("products.loadFailed"));
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  function openCreate() {
-    setEditing(null);
-    setName("");
-    setPrice("");
-    setValue("");
-    setFormError(null);
-    setDialogOpen(true);
-  }
-
-  function openEdit(p: Product) {
-    setEditing(p);
-    setName(p.name);
-    setPrice(String(p.price));
-    setValue(String(p.value));
-    setFormError(null);
-    setDialogOpen(true);
-  }
-
-  async function handleSave() {
-    setFormError(null);
-    const priceNum = Number.parseInt(price, 10);
-    const valueNum = Number.parseInt(value, 10);
-    if (!name.trim()) {
-      setFormError(t("products.nameRequired"));
-      return;
-    }
-    if (Number.isNaN(priceNum) || priceNum < 0) {
-      setFormError(t("products.priceInvalid"));
-      return;
-    }
-    if (Number.isNaN(valueNum) || valueNum < 0) {
-      setFormError(t("products.valueInvalid"));
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (editing) {
-        const res = await fetch(`/api/products/${editing.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            price: priceNum,
-            value: valueNum,
-          }),
-        });
-        const json = (await parseJson(res)) as ApiEnvelope<Product>;
-        if (!res.ok) {
-          setFormError(json.message ?? t("products.updateFailed"));
-          return;
-        }
-      } else {
-        const res = await fetch("/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            price: priceNum,
-            value: valueNum,
-          }),
-        });
-        const json = (await parseJson(res)) as ApiEnvelope<Product>;
-        if (!res.ok) {
-          setFormError(json.message ?? t("products.createFailed"));
-          return;
-        }
-      }
-      setDialogOpen(false);
-      await load();
-    } catch {
-      setFormError(t("products.genericError"));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/products/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const json = (await parseJson(res)) as ApiEnvelope<unknown>;
-        setError(json.message ?? t("products.deleteFailed"));
-        return;
-      }
-      setDeleteTarget(null);
-      await load();
-    } catch {
-      setError(t("products.deleteFailed"));
-    } finally {
-      setDeleting(false);
-    }
-  }
+  const {
+    t,
+    products,
+    loading,
+    error,
+    dialogOpen,
+    setDialogOpen,
+    editing,
+    name,
+    setName,
+    price,
+    setPrice,
+    value,
+    setValue,
+    saving,
+    formError,
+    deleteTarget,
+    setDeleteTarget,
+    deleting,
+    openCreate,
+    openEdit,
+    handleSave,
+    handleDelete,
+  } = useProductsManager();
 
   return (
     <div className="space-y-6">

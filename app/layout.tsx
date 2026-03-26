@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
+import { cookies } from "next/headers";
+import { Geist_Mono, Nunito } from "next/font/google";
 import { Providers } from "@/components/providers";
+import type { Locale } from "@/components/language-provider";
 import "./globals.css";
 
-const notoSans = Noto_Sans_JP({
-  variable: "--font-noto-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const notoSerif = Noto_Serif_JP({
-  variable: "--font-noto-serif",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -25,17 +21,22 @@ export const metadata: Metadata = {
   description: "Plan events, products, and purchases",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get("planner-locale")?.value;
+  const initialLocale: Locale | undefined =
+    raw === "es" || raw === "en" ? raw : undefined;
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={initialLocale ?? "en"} suppressHydrationWarning>
       <body
-        className={`${notoSans.variable} ${notoSerif.variable} ${geistMono.variable} min-h-screen antialiased`}
+        className={`${nunito.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers initialLocale={initialLocale}>{children}</Providers>
       </body>
     </html>
   );

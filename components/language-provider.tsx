@@ -15,6 +15,13 @@ import { messages } from "@/lib/i18n/messages";
 export type Locale = "en" | "es";
 
 const STORAGE_KEY = "planner-locale";
+const LOCALE_COOKIE = "planner-locale";
+const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function writeLocaleCookie(locale: Locale) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=${LOCALE_COOKIE_MAX_AGE};SameSite=Lax`;
+}
 
 function readStoredLocale(): Locale | null {
   if (typeof window === "undefined") return null;
@@ -53,12 +60,28 @@ function interpolate(
   return out;
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+export function LanguageProvider({
+  children,
+  initialLocale = null,
+}: {
+  children: React.ReactNode;
+  /** Locale from `planner-locale` cookie (server + first client paint must match). */
+  initialLocale?: Locale | null;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(
+    () => initialLocale ?? "en"
+  );
   const [mounted, setMounted] = useState(false);
 
+  /** Until effects run, keep translations aligned with SSR (cookie or English). */
+  const effectiveLocale: Locale = mounted
+    ? locale
+    : (initialLocale ?? "en");
+
   useEffect(() => {
-    setLocaleState(readStoredLocale() ?? detectLocale());
+    const next = readStoredLocale() ?? detectLocale();
+    setLocaleState(next);
+    writeLocaleCookie(next);
     setMounted(true);
   }, []);
 
@@ -70,15 +93,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
     localStorage.setItem(STORAGE_KEY, next);
+    writeLocaleCookie(next);
   }, []);
 
   const t = useCallback<TranslateFn>(
     (key, vars) => {
-      const table = messages[locale];
+      const table = messages[effectiveLocale];
       const raw = table[key] ?? messages.en[key] ?? key;
       return interpolate(raw, vars);
     },
-    [locale]
+    [effectiveLocale]
   );
 
   const value = useMemo(
@@ -99,9 +123,4 @@ export function useLanguage() {
     throw new Error("useLanguage must be used within LanguageProvider");
   }
   return ctx;
-}
-
-export function useTranslation() {
-  const { t, locale, setLocale } = useLanguage();
-  return { t, locale, setLocale };
 }

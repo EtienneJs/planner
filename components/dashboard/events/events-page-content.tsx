@@ -1,10 +1,10 @@
 "use client";
 
 import { EventsCalendarShell } from "@/components/dashboard/events/events-calendar-shell";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 
 export function EventsPageContent() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-4">

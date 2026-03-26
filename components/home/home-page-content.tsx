@@ -4,10 +4,10 @@ import { Suspense } from "react";
 
 import { HomeAuthLinks } from "@/components/home-auth-links";
 import { PublicThemeCorner } from "@/components/public-theme-corner";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 
 export function HomePageContent() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center gap-12 overflow-hidden bg-gradient-to-b from-background via-muted/40 to-background p-8">

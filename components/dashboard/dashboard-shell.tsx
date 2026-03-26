@@ -5,10 +5,10 @@ import { Separator } from "@/components/ui/separator";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useTranslation } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   return (
     <SidebarProvider>
       <AppSidebar />
