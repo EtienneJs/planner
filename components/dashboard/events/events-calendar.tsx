@@ -1,0 +1,427 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import FullCalendar from "@fullcalendar/react";
+import type { DateSelectArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import multiMonthPlugin from "@fullcalendar/multimonth";
+import interactionPlugin from "@fullcalendar/interaction";
+import listPlugin from "@fullcalendar/list";
+import allLocales from "@fullcalendar/core/locales-all";
+
+import type { CalendarEvent } from "@/lib/types/event";
+import { useTranslation } from "@/components/language-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+type ApiEnvelope<T> = { message: string; data?: T; details?: unknown };
+
+async function parseJson(res: Response): Promise<unknown> {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return {};
+  }
+}
+
+function toDatetimeLocalValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function parseDatetimeLocal(s: string): Date {
+  return new Date(s);
+}
+
+function mapToFcEvents(rows: CalendarEvent[]): EventInput[] {
+  return rows.map((e) => ({
+    id: e.id,
+    title: e.title,
+    start: e.startTime,
+    end: e.endTime,
+    extendedProps: {
+      description: e.description,
+      value: e.value,
+    },
+  }));
+}
+
+export function EventsCalendar() {
+  const { t, locale } = useTranslation();
+  const [fcEvents, setFcEvents] = useState<EventInput[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<CalendarEvent | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [value, setValue] = useState("");
+  const [startStr, setStartStr] = useState("");
+  const [endStr, setEndStr] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<CalendarEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/events");
+      const json = (await parseJson(res)) as ApiEnvelope<CalendarEvent[]>;
+      if (!res.ok) {
+        setError(json.message ?? t("events.loadFailed"));
+        setFcEvents([]);
+        return;
+      }
+      const rows = Array.isArray(json.data) ? json.data : [];
+      setFcEvents(mapToFcEvents(rows));
+    } catch {
+      setError(t("events.loadFailed"));
+      setFcEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const calendarPlugins = useMemo(
+    () => [
+      dayGridPlugin,
+      timeGridPlugin,
+      multiMonthPlugin,
+      interactionPlugin,
+      listPlugin,
+    ],
+    []
+  );
+
+  function openCreateFromSelect(arg: DateSelectArg) {
+    setEditing(null);
+    setTitle("");
+    setDescription("");
+    setValue("0");
+    setStartStr(toDatetimeLocalValue(arg.start));
+    setEndStr(toDatetimeLocalValue(arg.end));
+    setFormError(null);
+    setDialogOpen(true);
+    arg.view.calendar.unselect();
+  }
+
+  function openEditFromEvent(ev: CalendarEvent) {
+    setEditing(ev);
+    setTitle(ev.title);
+    setDescription(ev.description);
+    setValue(String(ev.value));
+    setStartStr(toDatetimeLocalValue(new Date(ev.startTime)));
+    setEndStr(toDatetimeLocalValue(new Date(ev.endTime)));
+    setFormError(null);
+    setDialogOpen(true);
+  }
+
+  const handleEventClick = useCallback((info: EventClickArg) => {
+    info.jsEvent.preventDefault();
+    if (!info.event.id) return;
+    const ext = info.event.extendedProps as {
+      description?: string;
+      value?: number;
+    };
+    const start = info.event.start;
+    const end = info.event.end ?? start;
+    if (!start) return;
+    openEditFromEvent({
+      id: String(info.event.id),
+      title: info.event.title ?? "",
+      description: ext.description ?? "",
+      value: typeof ext.value === "number" ? ext.value : 0,
+      startTime: start instanceof Date ? start.toISOString() : String(start),
+      endTime: end instanceof Date ? end.toISOString() : String(start),
+      userId: "",
+    });
+  }, []);
+
+  async function handleSave() {
+    setFormError(null);
+    const trimmedTitle = title.trim();
+    const d = description.trim();
+    if (!trimmedTitle) {
+      setFormError(t("events.errTitleRequired"));
+      return;
+    }
+    if (!d) {
+      setFormError(t("events.errDescriptionRequired"));
+      return;
+    }
+    const valueNum = Number.parseInt(value, 10);
+    if (Number.isNaN(valueNum)) {
+      setFormError(t("events.errValueInteger"));
+      return;
+    }
+    const start = parseDatetimeLocal(startStr);
+    const end = parseDatetimeLocal(endStr);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      setFormError(t("events.errInvalidRange"));
+      return;
+    }
+    if (end <= start) {
+      setFormError(t("events.errEndAfterStart"));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editing) {
+        const res = await fetch(`/api/events/${editing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: trimmedTitle,
+            description: d,
+            value: valueNum,
+            startTime: start.toISOString(),
+            endTime: end.toISOString(),
+          }),
+        });
+        const json = (await parseJson(res)) as ApiEnvelope<CalendarEvent>;
+        if (!res.ok) {
+          setFormError(json.message ?? t("events.updateFailed"));
+          return;
+        }
+      } else {
+        const res = await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: trimmedTitle,
+            description: d,
+            value: valueNum,
+            startTime: start.toISOString(),
+            endTime: end.toISOString(),
+          }),
+        });
+        const json = (await parseJson(res)) as ApiEnvelope<CalendarEvent>;
+        if (!res.ok) {
+          setFormError(json.message ?? t("events.createFailed"));
+          return;
+        }
+      }
+      setDialogOpen(false);
+      await load();
+    } catch {
+      setFormError(t("events.genericError"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/events/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const json = (await parseJson(res)) as ApiEnvelope<unknown>;
+        setError(json.message ?? t("events.deleteFailed"));
+        return;
+      }
+      setDeleteTarget(null);
+      setDialogOpen(false);
+      await load();
+    } catch {
+      setError(t("events.deleteFailed"));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="fc-theme-standard min-h-[560px] rounded-xl border bg-card p-2 md:p-4">
+        {loading ? (
+          <div className="flex h-[560px] items-center justify-center text-sm text-muted-foreground">
+            {t("events.loadingCalendar")}
+          </div>
+        ) : (
+          <FullCalendar
+            locales={allLocales}
+            locale={locale === "es" ? "es" : "en"}
+            plugins={calendarPlugins}
+            initialView="dayGridMonth"
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "multiMonthYear,dayGridMonth,timeGridWeek,listYear",
+            }}
+            height="auto"
+            contentHeight={520}
+            editable={false}
+            selectable
+            selectMirror
+            dayMaxEvents
+            weekends
+            events={fcEvents}
+            select={openCreateFromSelect}
+            eventClick={handleEventClick}
+            slotMinTime="06:00:00"
+            slotMaxTime="22:00:00"
+            allDaySlot={false}
+            nowIndicator
+          />
+        )}
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editing ? t("events.editEvent") : t("events.newEvent")}
+            </DialogTitle>
+            <DialogDescription>{t("events.dialogDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            {formError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {formError}
+              </p>
+            ) : null}
+            <div className="grid gap-2">
+              <Label htmlFor="ev-title">{t("events.labelTitle")}</Label>
+              <Input
+                id="ev-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ev-desc">{t("events.labelDescription")}</Label>
+              <Textarea
+                id="ev-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ev-value">{t("events.labelValue")}</Label>
+              <Input
+                id="ev-value"
+                type="number"
+                step={1}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ev-start">{t("events.labelStart")}</Label>
+              <Input
+                id="ev-start"
+                type="datetime-local"
+                value={startStr}
+                onChange={(e) => setStartStr(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ev-end">{t("events.labelEnd")}</Label>
+              <Input
+                id="ev-end"
+                type="datetime-local"
+                value={endStr}
+                onChange={(e) => setEndStr(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+            {editing ? (
+              <Button
+                type="button"
+                variant="destructive"
+                className="w-full sm:mr-auto sm:w-auto"
+                onClick={() => {
+                  setDeleteTarget(editing);
+                }}
+              >
+                {t("events.delete")}
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                {t("events.cancel")}
+              </Button>
+              <Button onClick={() => void handleSave()} disabled={saving}>
+                {saving
+                  ? t("events.saving")
+                  : editing
+                    ? t("events.save")
+                    : t("events.create")}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("events.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? t("events.deleteDescription", { title: deleteTarget.title })
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("events.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void handleDelete()}
+              disabled={deleting}
+            >
+              {deleting ? t("events.deleting") : t("events.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

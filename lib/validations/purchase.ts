@@ -3,10 +3,14 @@ import { z } from "zod";
 
 export const createPurchaseSchema = z.object({
   description: z.string().min(1),
-  detailProducts: z.array(z.object({
-    productId: z.cuid(),
-    cantidad: z.number().int().positive(),
-  })),
+  detailProducts: z
+    .array(
+      z.object({
+        productId: z.cuid(),
+        cantidad: z.number().int().positive(),
+      })
+    )
+    .min(1, "Include at least one product line"),
 });
 
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;

@@ -8,7 +8,15 @@ import { NextRequest } from "next/server";
 export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
   if (user instanceof Response) return user;
-  const purchases = await db.purchase.findMany({ where: { userId: user.id } });
+  const purchases = await db.purchase.findMany({
+    where: { userId: user.id },
+    include: {
+      detailProducts: {
+        include: { product: true },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
   return api.ok("OK", purchases);
 }
 

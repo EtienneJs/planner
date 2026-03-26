@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { registerSchema } from "@/lib/validations/auth";
+import { useTranslation } from "@/components/language-provider";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ type ApiErrorBody = {
 };
 
 export function RegisterForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +38,7 @@ export function RegisterForm() {
 
     const parsed = registerSchema.safeParse({ email, password });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid data");
+      setError(parsed.error.issues[0]?.message ?? t("register.invalidData"));
       return;
     }
 
@@ -50,26 +52,26 @@ export function RegisterForm() {
       const body = (await res.json()) as ApiErrorBody;
 
       if (!res.ok) {
-        setError(body.message ?? "Registration failed");
+        setError(body.message ?? t("register.failed"));
         return;
       }
 
       router.push("/login?registered=1");
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("register.genericError"));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <Card className="w-full max-w-md shadow-sm">
-      <CardHeader>
-        <CardTitle>Create account</CardTitle>
-        <CardDescription>
-          Choose an email and password to register.
-        </CardDescription>
+    <Card className="w-full max-w-md rounded-2xl border-border/60 bg-card/95 shadow-lg shadow-primary/[0.04] backdrop-blur-sm dark:shadow-primary/[0.08]">
+      <CardHeader className="space-y-1.5 pb-2">
+        <CardTitle className="font-heading text-2xl tracking-[0.03em]">
+          {t("register.title")}
+        </CardTitle>
+        <CardDescription>{t("register.description")}</CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit}>
         <CardContent className="grid gap-4">
@@ -82,7 +84,7 @@ export function RegisterForm() {
             </p>
           ) : null}
           <div className="grid gap-2">
-            <Label htmlFor="register-email">Email</Label>
+            <Label htmlFor="register-email">{t("register.email")}</Label>
             <Input
               id="register-email"
               type="email"
@@ -93,7 +95,7 @@ export function RegisterForm() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="register-password">Password</Label>
+            <Label htmlFor="register-password">{t("register.password")}</Label>
             <Input
               id="register-password"
               type="password"
@@ -104,13 +106,13 @@ export function RegisterForm() {
               minLength={6}
             />
             <p className="text-xs text-muted-foreground">
-              At least 6 characters.
+              {t("register.passwordHint")}
             </p>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <Button type="submit" disabled={loading} size="lg" className="w-full sm:w-auto">
-            {loading ? "Creating account…" : "Register"}
+            {loading ? t("register.creating") : t("register.submit")}
           </Button>
           <Link
             href="/login"
@@ -119,7 +121,7 @@ export function RegisterForm() {
               "inline-flex w-full justify-center sm:w-auto"
             )}
           >
-            Already have an account
+            {t("register.alreadyHaveAccount")}
           </Link>
         </CardFooter>
       </form>

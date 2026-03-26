@@ -29,8 +29,15 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    redirect({ baseUrl }) {
-      return `${baseUrl}/api/auth/session`;
+    /** No redirigir a `/api/auth/session` (eso solo devuelve JSON). Respeta `callbackUrl` de signIn/signOut. */
+    redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {
+        /* ignore */
+      }
+      return baseUrl;
     },
     jwt: ({ token, user }) => {
       if (user) token.id = user.id;
