@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         endTime: data.endTime,
         userId: user.id,
         description: data.description,
-        value: data.value,
+        ...(data.status !== undefined && { status: data.status }),
       },
     });
 

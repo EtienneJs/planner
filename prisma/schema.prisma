@@ -12,6 +12,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum EventStatus {
+  PENDING
+  NOT_COMPLETED
+  COMPLETED
+}
+
 model User {
   id       String   @id @default(cuid())
   email    String   @unique
@@ -25,7 +31,7 @@ model Event {
   id        String   @id @default(cuid())
   title     String
   description String
-  value     Int
+  status    EventStatus @default(PENDING)
   startTime DateTime
   endTime   DateTime
   userId    String

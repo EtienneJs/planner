@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
+  BarChart2,
   Calendar,
   LayoutDashboard,
+  List,
   LogOut,
   Package,
   ShoppingCart,
@@ -22,6 +24,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -35,7 +40,6 @@ const nav: {
 }[] = [
   { titleKey: "nav.events", href: "/dashboard/events", icon: Calendar },
   { titleKey: "nav.products", href: "/dashboard/products", icon: Package },
-  { titleKey: "nav.purchases", href: "/dashboard/purchases", icon: ShoppingCart },
 ];
 
 export function AppSidebar() {
@@ -78,6 +82,43 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  render={<Link href="/dashboard/purchases" />}
+                  isActive={pathname.startsWith("/dashboard/purchases")}
+                  tooltip={t("nav.purchases")}
+                >
+                  <ShoppingCart />
+                  <span>{t("nav.purchases")}</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      render={<Link href="/dashboard/purchases" />}
+                      isActive={
+                        pathname === "/dashboard/purchases" ||
+                        pathname === "/dashboard/purchases/"
+                      }
+                      size="sm"
+                    >
+                      <List />
+                      <span>{t("nav.purchasesList")}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      render={<Link href="/dashboard/purchases/charts" />}
+                      isActive={pathname.startsWith(
+                        "/dashboard/purchases/charts"
+                      )}
+                      size="sm"
+                    >
+                      <BarChart2 />
+                      <span>{t("nav.purchasesCharts")}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

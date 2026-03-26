@@ -36,8 +36,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/language-provider";
+import { ProductLinePicker } from "@/components/dashboard/purchases/product-line-picker";
 
 type ApiEnvelope<T> = { message: string; data?: T; details?: unknown };
 
@@ -413,23 +413,19 @@ export function PurchasesManager() {
                       <Label className="text-xs text-muted-foreground">
                         {t("purchases.product")}
                       </Label>
-                      <select
-                        className={cn(
-                          "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm",
-                          "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                        )}
+                      <ProductLinePicker
+                        products={catalog}
                         value={line.productId}
-                        onChange={(e) =>
-                          updateLine(index, { productId: e.target.value })
+                        onChange={(productId) =>
+                          updateLine(index, { productId })
                         }
-                      >
-                        <option value="">{t("purchases.selectProduct")}</option>
-                        {catalog.map((pr) => (
-                          <option key={pr.id} value={pr.id}>
-                            {pr.name} ({t("purchases.priceTag", { price: pr.price })})
-                          </option>
-                        ))}
-                      </select>
+                        excludeProductIds={lines
+                          .map((l, i) =>
+                            i !== index && l.productId ? l.productId : null
+                          )
+                          .filter((id): id is string => id !== null)}
+                        disabled={noProducts}
+                      />
                     </div>
                     <div className="grid w-full gap-2 sm:w-28">
                       <Label className="text-xs text-muted-foreground">

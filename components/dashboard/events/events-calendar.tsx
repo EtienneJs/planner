@@ -15,8 +15,9 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import allLocales from "@fullcalendar/core/locales-all";
 
-import type { CalendarEvent } from "@/lib/types/event";
+import type { CalendarEvent, EventStatus } from "@/lib/types/event";
 import { useTranslation } from "@/components/language-provider";
+import { EventStatusPicker } from "@/components/dashboard/events/event-status-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,17 +62,39 @@ function parseDatetimeLocal(s: string): Date {
   return new Date(s);
 }
 
+function fcStatusClass(s: EventStatus): string {
+  switch (s) {
+    case "NOT_COMPLETED":
+      return "fc-event-status-not-completed";
+    case "COMPLETED":
+      return "fc-event-status-completed";
+    default:
+      return "fc-event-status-pending";
+  }
+}
+
+function coerceEventStatus(raw: unknown): EventStatus {
+  if (raw === "NOT_COMPLETED" || raw === "COMPLETED" || raw === "PENDING") {
+    return raw;
+  }
+  return "PENDING";
+}
+
 function mapToFcEvents(rows: CalendarEvent[]): EventInput[] {
-  return rows.map((e) => ({
-    id: e.id,
-    title: e.title,
-    start: e.startTime,
-    end: e.endTime,
-    extendedProps: {
-      description: e.description,
-      value: e.value,
-    },
-  }));
+  return rows.map((e) => {
+    const st = e.status ?? "PENDING";
+    return {
+      id: e.id,
+      title: e.title,
+      start: e.startTime,
+      end: e.endTime,
+      classNames: [fcStatusClass(st)],
+      extendedProps: {
+        description: e.description,
+        status: st,
+      },
+    };
+  });
 }
 
 /** Tiempo restante hasta el fin: "2 h 3 m 10 s" (o "0 h 0 m 0 s" si ya terminó). */
@@ -94,7 +117,7 @@ export function EventsCalendar() {
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [value, setValue] = useState("");
+  const [status, setStatus] = useState<EventStatus>("PENDING");
   const [startStr, setStartStr] = useState("");
   const [endStr, setEndStr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -174,7 +197,7 @@ export function EventsCalendar() {
     setEditing(null);
     setTitle("");
     setDescription("");
-    setValue("0");
+    setStatus("PENDING");
     setStartStr(toDatetimeLocalValue(arg.start));
     setEndStr(toDatetimeLocalValue(arg.end));
     setFormError(null);
@@ -186,7 +209,7 @@ export function EventsCalendar() {
     setEditing(ev);
     setTitle(ev.title);
     setDescription(ev.description);
-    setValue(String(ev.value));
+    setStatus(ev.status ?? "PENDING");
     setStartStr(toDatetimeLocalValue(new Date(ev.startTime)));
     setEndStr(toDatetimeLocalValue(new Date(ev.endTime)));
     setFormError(null);
@@ -198,7 +221,7 @@ export function EventsCalendar() {
     if (!info.event.id) return;
     const ext = info.event.extendedProps as {
       description?: string;
-      value?: number;
+      status?: unknown;
     };
     const start = info.event.start;
     const end = info.event.end ?? start;
@@ -207,7 +230,7 @@ export function EventsCalendar() {
       id: String(info.event.id),
       title: info.event.title ?? "",
       description: ext.description ?? "",
-      value: typeof ext.value === "number" ? ext.value : 0,
+      status: coerceEventStatus(ext.status),
       startTime: start instanceof Date ? start.toISOString() : String(start),
       endTime: end instanceof Date ? end.toISOString() : String(start),
       userId: "",
@@ -224,11 +247,6 @@ export function EventsCalendar() {
     }
     if (!d) {
       setFormError(t("events.errDescriptionRequired"));
-      return;
-    }
-    const valueNum = Number.parseInt(value, 10);
-    if (Number.isNaN(valueNum)) {
-      setFormError(t("events.errValueInteger"));
       return;
     }
     const start = parseDatetimeLocal(startStr);
@@ -251,7 +269,7 @@ export function EventsCalendar() {
           body: JSON.stringify({
             title: trimmedTitle,
             description: d,
-            value: valueNum,
+            status,
             startTime: start.toISOString(),
             endTime: end.toISOString(),
           }),
@@ -268,7 +286,7 @@ export function EventsCalendar() {
           body: JSON.stringify({
             title: trimmedTitle,
             description: d,
-            value: valueNum,
+            status,
             startTime: start.toISOString(),
             endTime: end.toISOString(),
           }),
@@ -386,13 +404,11 @@ export function EventsCalendar() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ev-value">{t("events.labelValue")}</Label>
-              <Input
-                id="ev-value"
-                type="number"
-                step={1}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
+              <Label htmlFor="ev-status">{t("events.labelStatus")}</Label>
+              <EventStatusPicker
+                id="ev-status"
+                value={status}
+                onChange={setStatus}
               />
             </div>
             <div className="grid gap-2">

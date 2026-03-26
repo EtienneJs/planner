@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+export const eventStatusValues = ["PENDING", "NOT_COMPLETED", "COMPLETED"] as const;
+
 export const createEventSchema = z
   .object({
     title: z.string().min(1, "Title is required"),
     description: z.string().min(1, "Description is required"),
-    value: z.number().int(),
+    status: z.enum(eventStatusValues).optional(),
     startTime: z.coerce.date(),
     endTime: z.coerce.date(),
   })
@@ -27,7 +29,7 @@ export const updateEventSchema = z
   .object({
     title: z.string().min(1, "Title cannot be empty").optional(),
     description: z.string().min(1, "Description cannot be empty").optional(),
-    value: z.number().int().optional(),
+    status: z.enum(eventStatusValues).optional(),
     startTime: z.coerce.date().optional(),
     endTime: z.coerce.date().optional(),
   })
@@ -35,7 +37,7 @@ export const updateEventSchema = z
     (d) =>
       d.title !== undefined ||
       d.description !== undefined ||
-      d.value !== undefined ||
+      d.status !== undefined ||
       d.startTime !== undefined ||
       d.endTime !== undefined,
     { message: "Send at least one field to update", path: ["title"] }

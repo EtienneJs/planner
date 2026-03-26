@@ -50,6 +50,7 @@
 
 /* Paleta inspirada en papel washi, tinta y acentos suaves (estética serena). */
 :root {
+  color-scheme: light;
   --background: oklch(0.992 0.008 95);
   --foreground: oklch(0.26 0.022 260);
   --card: oklch(0.995 0.006 95);
@@ -85,6 +86,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.17 0.022 260);
   --foreground: oklch(0.96 0.015 95);
   --card: oklch(0.21 0.025 260);
@@ -141,4 +143,36 @@
   .text-balance-safe {
     text-wrap: balance;
   }
+}
+
+/* Estados de eventos en FullCalendar (pendiente / no completado / completado). */
+.fc-theme-standard .fc-event.fc-event-status-pending {
+  background-color: oklch(0.9 0.06 95);
+  border-color: oklch(0.72 0.1 85);
+  color: oklch(0.22 0.02 260);
+}
+.fc-theme-standard .fc-event.fc-event-status-not-completed {
+  background-color: oklch(0.88 0.08 25);
+  border-color: oklch(0.58 0.16 25);
+  color: oklch(0.2 0.04 260);
+}
+.fc-theme-standard .fc-event.fc-event-status-completed {
+  background-color: oklch(0.88 0.07 155);
+  border-color: oklch(0.55 0.1 155);
+  color: oklch(0.2 0.03 260);
+}
+.dark .fc-theme-standard .fc-event.fc-event-status-pending {
+  background-color: oklch(0.32 0.04 95);
+  border-color: oklch(0.55 0.08 85);
+  color: oklch(0.94 0.02 95);
+}
+.dark .fc-theme-standard .fc-event.fc-event-status-not-completed {
+  background-color: oklch(0.32 0.08 25);
+  border-color: oklch(0.5 0.14 22);
+  color: oklch(0.96 0.02 95);
+}
+.dark .fc-theme-standard .fc-event.fc-event-status-completed {
+  background-color: oklch(0.32 0.06 155);
+  border-color: oklch(0.48 0.1 155);
+  color: oklch(0.96 0.02 95);
 }

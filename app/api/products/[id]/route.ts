@@ -66,12 +66,43 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const result = await db.product.deleteMany({
+    const owned = await db.product.findFirst({
       where: { id, userId: user.id },
+      select: { id: true },
     });
-    if (result.count === 0) {
+    if (!owned) {
       return notFoundOrForbiddenProduct(id);
     }
+
+    await db.$transaction(async (tx) => {
+      const affected = await tx.purchaseDetailProduct.findMany({
+        where: { productId: id },
+        select: { purchaseId: true },
+      });
+      const purchaseIds = [...new Set(affected.map((r) => r.purchaseId))];
+
+      await tx.purchaseDetailProduct.deleteMany({ where: { productId: id } });
+
+      for (const purchaseId of purchaseIds) {
+        const purchase = await tx.purchase.findFirst({
+          where: { id: purchaseId, userId: user.id },
+          select: { id: true },
+        });
+        if (!purchase) continue;
+
+        const agg = await tx.purchaseDetailProduct.aggregate({
+          where: { purchaseId },
+          _sum: { total: true },
+        });
+        await tx.purchase.update({
+          where: { id: purchaseId },
+          data: { total: agg._sum.total ?? 0 },
+        });
+      }
+
+      await tx.product.delete({ where: { id } });
+    });
+
     return api.ok("Product deleted");
   } catch (error) {
     if (error instanceof z.ZodError) {

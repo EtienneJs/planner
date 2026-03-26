@@ -61,7 +61,7 @@ export async function PATCH(
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
-        ...(data.value !== undefined && { value: data.value }),
+        ...(data.status !== undefined && { status: data.status }),
         ...(data.startTime !== undefined && { startTime: data.startTime }),
         ...(data.endTime !== undefined && { endTime: data.endTime }),
       },
