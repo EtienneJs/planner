@@ -43,6 +43,7 @@ export const en = {
   "nav.workspace": "Workspace",
   "nav.events": "Events",
   "nav.products": "Products",
+  "nav.credentials":"Credentials",
   "nav.purchases": "Purchases",
   "nav.signOut": "Sign out",
 
@@ -266,6 +267,7 @@ export const es: Record<MessageKey, string> = {
   "nav.products": "Productos",
   "nav.purchases": "Compras",
   "nav.signOut": "Cerrar sesión",
+  "nav.credentials":"Credenciales",
 
   "events.pageTitle": "Eventos",
   "events.pageIntro":

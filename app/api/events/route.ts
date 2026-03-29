@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
   if (user instanceof Response) return user;
+  
   const events = await db.event.findMany({
     where: { userId: user.id },
     orderBy: { startTime: "asc" },
